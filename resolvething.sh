@@ -14,7 +14,24 @@ checkcommand fd
 
 MAX_SIZE=1048576
 
-pushd ~/wiki/vimwiki
+if [ -z "$WIKIDIR" ]
+then
+if [ -e ~/storage/shared/wiki/vimwiki ]
+then
+    WIKIDIR="$HOME/storage/shared/wiki/vimwiki"
+elif [ -e ~/wiki/vimwiki/ ]
+then
+    WIKIDIR="$HOME/wiki/vimwiki"
+fi
+fi
+
+if ! [ -e "$WIKIDIR" ]
+then
+    echo "wiki not found at $WIKIDIR"
+    exit 1
+fi
+
+pushd "$WIKIDIR"
 
 
 
