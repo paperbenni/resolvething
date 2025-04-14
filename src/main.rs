@@ -1,6 +1,9 @@
 use clap::{Parser, Subcommand};
-use std::process::Command;
 use std::str;
+use std::{
+    io::{BufRead, BufReader, Write},
+    process::{Command, Stdio},
+};
 
 #[derive(Parser)]
 struct Cli {
@@ -14,9 +17,53 @@ enum Commands {
     All,
 }
 
-
 pub struct FdupesRunner {
     pub duplicate_groups: Vec<Vec<String>>,
+}
+
+pub struct Fzf;
+
+impl Fzf {
+    /// Launches an fzf process to allow the user to select an item from the provided vector.
+    ///
+    /// # Arguments
+    ///
+    /// * `items` - A vector of strings representing the items to choose from.
+    ///
+    /// # Returns
+    ///
+    /// * `Option<String>` - The selected item as a `String`, or `None` if no selection was made.
+    pub fn select(items: Vec<String>) -> Option<String> {
+        let mut child = Command::new("fzf")
+            .arg("--preview")
+            .arg("bat --style=plain --paging=never --color=always {}")
+            .stdin(Stdio::piped())
+            .stdout(Stdio::piped())
+            .spawn()
+            .expect("Failed to start fzf process");
+
+        {
+            let stdin = child.stdin.as_mut().expect("Failed to open stdin");
+            for item in items {
+                writeln!(stdin, "{}", item).expect("Failed to write to stdin");
+            }
+        }
+
+        let output = child.wait_with_output().expect("Failed to read fzf output");
+
+        if output.status.success() {
+            let selected = BufReader::new(output.stdout.as_slice())
+                .lines()
+                .next()
+                .unwrap_or_else(|| Ok(String::new()))
+                .unwrap();
+            if !selected.is_empty() {
+                return Some(selected);
+            }
+        }
+
+        None
+    }
 }
 
 impl FdupesRunner {
@@ -75,6 +122,14 @@ fn main() {
                     println!("Duplicate groups found:");
                     for group in runner.duplicate_groups {
                         println!("{:?}", group);
+                        let options = group.clone();
+                        let selected  = Fzf::select(options);
+                        if let Some(selected) = selected {
+                            println!("Selected: {}", selected);
+                        } else {
+                            println!("No selection made.");
+                            continue;
+                        }
                     }
                 }
                 Err(e) => {
