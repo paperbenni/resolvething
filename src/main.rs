@@ -37,6 +37,12 @@ impl Fzf {
         let mut child = Command::new("fzf")
             .arg("--preview")
             .arg("bat --style=plain --paging=never --color=always {}")
+            .arg("--preview-window")
+            .arg(if termsize::get().map_or(false, |size| size.cols < 80) {
+                "down:50%"
+            } else {
+                "right:50%"
+            })
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
             .spawn()
@@ -123,9 +129,27 @@ fn main() {
                     for group in runner.duplicate_groups {
                         println!("{:?}", group);
                         let options = group.clone();
-                        let selected  = Fzf::select(options);
+                        let selected = Fzf::select(options);
                         if let Some(selected) = selected {
                             println!("Selected: {}", selected);
+                            for file in group {
+                                if file != selected {
+                                    let output = std::process::Command::new("trash")
+                                        .arg(&file)
+                                        .output();
+                                    match output {
+                                        Ok(output) if output.status.success() => {
+                                            println!("Removed: {}", file);
+                                        }
+                                        Ok(output) => {
+                                            eprintln!("Failed to remove {}: {}", file, String::from_utf8_lossy(&output.stderr));
+                                        }
+                                        Err(e) => {
+                                            eprintln!("Error executing trash command for {}: {}", file, e);
+                                        }
+                                    }
+                                }
+                            }
                         } else {
                             println!("No selection made.");
                             continue;
