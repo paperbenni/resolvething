@@ -56,4 +56,4 @@ fd 'sync-conflict' -t f | while read -r conflict_file; do
     fi
   fi
 done
-      
+
