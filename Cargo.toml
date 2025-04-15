@@ -9,6 +9,9 @@ description = "A CLI tool to resolve syncthing conflicts and duplicate files"
 
 [dependencies]
 clap = { version = "4.5.36", features = ["derive"] }
+dirs = "6.0.0"
 regex = "1.11.1"
+serde = { version = "1.0.219", features = ["derive"] }
 termsize = "0.1.9"
+toml = "0.8.20"
 walkdir = "2.5.0"

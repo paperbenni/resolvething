@@ -7,11 +7,11 @@ resolve syncthing conflicts and oddities quickly
 
 Syncthing is amazing. It's the only piece of software I have ever set up, not
 touched for years and it still works. It does leave behind a lot of gunk files if
-you switch between devices often and 
+you switch between devices often and
 
 # Features
 
-- Detect conflicts, use merge tool to resolve them. 
+- Detect conflicts, use merge tool to resolve them.
 - Detect duplicates, offer
 
 # Installation
@@ -30,8 +30,10 @@ TODO: crates.io
 
 - rewrite in rust
     - add clap documentation
-    - refactor horrible structure into modules
-    - upload to crates.io?
+    - config
+      - verify config
+      - allow tilde in path name
+    - better error handling
 - maybe replace fd with walkdir
 - CI
     - tests
@@ -47,4 +49,3 @@ spend on this.
 # Disclaimer
 
 this sorta works now, but no promises.
-
