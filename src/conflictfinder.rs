@@ -68,9 +68,7 @@ impl Conflict {
             false
         };
         if resolved {
-            println!("I would have deleted {} here", &self.modifiedfile);
-            // TODO: uncomment after enough testing
-            // Trash::trash(&self.modifiedfile);
+            Trash::trash(&self.modifiedfile);
         }
     }
 }
