@@ -16,7 +16,7 @@ you switch between devices often and
 # Installation
 
 install dependencies
-- fdupes
+- fclones
 - fzf
 - bat
 - trash

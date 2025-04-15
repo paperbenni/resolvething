@@ -1,4 +1,4 @@
-use crate::{config::Config, conflictfinder::ConflictFinder, duplicates::FdupesRunner};
+use crate::{config::Config, conflictfinder::ConflictFinder, duplicates::FclonesRunner};
 
 pub struct App {
     config: Config,
@@ -22,7 +22,7 @@ impl App {
     }
 
     pub fn check_dependencies() {
-        let commands = vec!["fdupes", "fzf", "trash", "bat"];
+        let commands = vec!["fclones", "fzf", "trash", "bat"];
         let mut any_missing = false;
         for command in commands {
             if !Self::check_command(command) {
@@ -38,7 +38,7 @@ impl App {
 
     pub fn run_duplicate(&self) {
         eprintln!("searching for duplicates");
-        let mut runner = FdupesRunner::new();
+        let mut runner = FclonesRunner::new();
         runner
             .run_recursively(&self.config.working_directory.to_string_lossy())
             .unwrap();

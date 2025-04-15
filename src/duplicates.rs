@@ -6,30 +6,36 @@ use crate::config::Config;
 use crate::fzf::Fzf;
 use crate::trash::Trash;
 
-pub struct FdupesRunner {
+pub struct FclonesRunner {
     pub duplicate_groups: Vec<Duplicate>,
 }
 
-impl FdupesRunner {
+impl FclonesRunner {
     pub fn new() -> Self {
-        FdupesRunner {
+        FclonesRunner {
             duplicate_groups: Vec::new(),
         }
     }
 
     pub fn run_recursively(&mut self, directory: &str) -> Result<(), String> {
-        let output = Command::new("fdupes")
-            .arg("-r")
+        let output = Command::new("fclones")
+            .arg("group")
+            .arg("--hidden")
             .arg(directory)
+            .arg("--format")
+            .arg("fdupes")
+            .arg("--cache")
+            .arg("--exclude")
+            .arg("**/.stversions/**")
             .output()
-            .map_err(|e| format!("Failed to execute fdupes: {}", e))?;
+            .map_err(|e| format!("Failed to execute fclones: {}", e))?;
 
         if !output.status.success() {
-            return Err(format!("fdupes failed with status: {}", output.status));
+            return Err(format!("fclones failed with status: {}", output.status));
         }
 
         let stdout = str::from_utf8(&output.stdout)
-            .map_err(|e| format!("Failed to parse fdupes output: {}", e))?;
+            .map_err(|e| format!("Failed to parse fclones output: {}", e))?;
 
         self.parse_output(stdout);
         Ok(())
