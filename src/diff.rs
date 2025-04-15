@@ -8,7 +8,6 @@ impl VimDiff {
             .arg("-d")
             .arg(file1)
             .arg(file2)
-            //TODO: figure out if this is needed
             .stdin(Stdio::inherit())
             .stdout(Stdio::inherit())
             .stderr(Stdio::inherit())

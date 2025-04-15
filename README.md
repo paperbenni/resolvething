@@ -2,7 +2,6 @@
 
 resolve syncthing conflicts and oddities quickly
 
-
 # Why?
 
 Syncthing is amazing. It's the only piece of software I have ever set up, not
@@ -21,7 +20,6 @@ install dependencies
 - fzf
 - bat
 - trash
-- fd
 
 ```sh
 cargo install resolvething
@@ -30,7 +28,6 @@ cargo install resolvething
 # Roadmap
 
 - rewrite in rust
-    - add clap documentation
     - config
       - verify config
       - allow tilde in path name
@@ -40,13 +37,6 @@ cargo install resolvething
 - CI
     - tests
     - release binaries
-
-# Thoughts
-
-I do not want to reinvent the wheel. This is supposed to be small and rely on
-existing, mature and well supported tools as much as possible. fzf, fd, fdupes
-etc are good. I could not do a better job with the amount of ime I'm willing to
-spend on this.
 
 # Disclaimer
 
