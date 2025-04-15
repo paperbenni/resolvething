@@ -97,6 +97,15 @@ impl ConflictFinder {
             .into_iter()
             .filter_map(|e| e.ok())
         {
+            if entry
+                .path()
+                .components()
+                .filter_map(|comp| comp.as_os_str().to_str())
+                .any(|segment| segment == ".stversions")
+            {
+                println!("skipping stversions file {}", entry.path().display());
+                continue;
+            }
             if entry.file_type().is_file() && regex.is_match(entry.path().to_str().unwrap()) {
                 let originalfile = replaceexp
                     .replace_all(entry.path().to_str().unwrap(), ".md")
