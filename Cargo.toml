@@ -5,4 +5,6 @@ edition = "2024"
 
 [dependencies]
 clap = { version = "4.5.36", features = ["derive"] }
+regex = "1.11.1"
 termsize = "0.1.9"
+walkdir = "2.5.0"
