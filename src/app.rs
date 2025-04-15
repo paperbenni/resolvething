@@ -57,7 +57,7 @@ impl App {
         finder.print_conflicts();
         println!("wouldve handled this");
         for conflict in finder.conflicts {
-            conflict.handle_conflict();
+            conflict.handle_conflict(&self.config);
         }
     }
 

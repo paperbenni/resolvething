@@ -3,7 +3,7 @@ use std::path::PathBuf;
 use regex::Regex;
 use walkdir::WalkDir;
 
-use crate::diff::VimDiff;
+use crate::{config::Config, diff::VimDiff, trash::Trash};
 
 pub struct Conflict {
     pub originalfile: String,
@@ -43,7 +43,7 @@ impl Conflict {
             && Conflict::file_is_valid(&self.modifiedfile)
     }
 
-    pub fn handle_conflict(&self) {
+    pub fn handle_conflict(&self, config: &Config) {
         if !self.is_valid() {
             return;
         }
@@ -68,7 +68,7 @@ impl Conflict {
             false
         };
         if resolved {
-            Trash::trash(&self.modifiedfile);
+            Trash::trash(&self.modifiedfile, config);
         }
     }
 }
