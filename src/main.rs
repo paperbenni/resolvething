@@ -27,6 +27,9 @@ fn main() {
         Some(Commands::All) => {
             println!("Running the 'all' command");
         }
+        Some(Commands::Test) => {
+            println!("Running the 'test' command");
+        }
         None => {
             println!("Hello, world!");
         }

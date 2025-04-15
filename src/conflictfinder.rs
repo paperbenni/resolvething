@@ -1,9 +1,73 @@
+use std::path::{Path, PathBuf};
+
 use regex::Regex;
 use walkdir::WalkDir;
+
+use crate::diff::VimDiff;
 
 pub struct Conflict {
     pub originalfile: String,
     pub modifiedfile: String,
+}
+
+impl Conflict {
+    pub fn new(originalfile: String, modifiedfile: String) -> Self {
+        Conflict {
+            originalfile,
+            modifiedfile,
+        }
+    }
+    pub fn print(&self) {
+        println!("Original file: {}", self.originalfile);
+        println!("Modified file: {}", self.modifiedfile);
+    }
+
+    pub fn is_valid(&self) -> bool {
+        let original_exists = PathBuf::from(&self.originalfile).exists();
+        let modified_exists = PathBuf::from(&self.modifiedfile).exists();
+        self.originalfile != self.modifiedfile && original_exists && modified_exists
+    }
+
+    pub fn handle_conflict(&self) {
+        // Implement conflict handling logic here
+        // if file "$conflict_file" | grep -q "text"; then
+        //   # Check if the file size is within the limit
+        //   if [ "$(stat -c%s "$conflict_file")" -le "$MAX_SIZE" ]; then
+        //     # Derive the original file name (assuming a naming convention)
+        //     original_file="$(
+        //         sed 's/\.sync-conflict-[A-Z0-9-]*\.md$/.md/' <<< "$conflict_file"
+        //     )"
+        //     echo "conflict_file: $conflict_file"
+        //     echo "original_file: $original_file"
+
+        //     if [ "$conflict_file"  = "$original_file" ]; then
+        //       echo "conflict file and original file are the same file, wtf"
+        //       echo "skipping"
+        //       continue
+        //     fi
+
+        //     # Check if the original file exists
+        //     if [ -f "$original_file" ]; then
+        //       # Open both files in Neovim diff mode
+        //       nvim -d "$conflict_file" "$original_file"
+
+        //       # After Neovim exits, compare the files
+        //       if cmp -s "$conflict_file" "$original_file"; then
+        //         # If files are identical, remove the conflict file
+        //         trash "$conflict_file"
+        //         echo "Removed identical conflict file: $conflict_file"
+        //       else
+        //         echo "Files are different. Conflict file not removed: $conflict_file"
+        //       fi
+        //     else
+        //       echo "Original file not found for: $conflict_file"
+        //     fi
+        //   fi
+        if !self.is_valid() {
+            return;
+        }
+        VimDiff::diff(&self.modifiedfile, &self.originalfile);
+    }
 }
 
 pub struct ConflictFinder {
@@ -45,8 +109,7 @@ impl ConflictFinder {
 
     pub fn print_conflicts(&self) {
         for conflict in &self.conflicts {
-            println!("Original file: {}", conflict.originalfile);
-            println!("Modified file: {}", conflict.modifiedfile);
+            conflict.print();
         }
     }
 }
