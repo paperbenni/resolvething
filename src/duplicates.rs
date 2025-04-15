@@ -2,6 +2,7 @@ use std::process::Command;
 
 use std::str;
 
+use crate::config::Config;
 use crate::fzf::Fzf;
 use crate::trash::Trash;
 
@@ -90,10 +91,10 @@ impl Duplicate {
     /// ]);
     /// duplicate.keep_only("/path/to/file1.txt".to_string());
     /// ```
-    pub fn keep_only(&self, keep: String) {
+    pub fn keep_only(&self, keep: String, config: &Config) {
         for file in &self.files {
             if *file != keep {
-                Trash::trash(file);
+                Trash::trash(file, config);
             }
         }
     }

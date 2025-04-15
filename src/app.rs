@@ -44,7 +44,7 @@ impl App {
             .unwrap();
         runner.duplicate_groups.iter().for_each(|group| {
             if let Some(choice) = group.choose() {
-                group.keep_only(choice);
+                group.keep_only(choice, &self.config);
             }
         });
     }

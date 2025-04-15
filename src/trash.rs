@@ -1,8 +1,12 @@
+use crate::config::Config;
+
 pub struct Trash;
 
 impl Trash {
-    pub fn trash(file: &str) {
-        let output = std::process::Command::new("trash").arg(&file).output();
+    pub fn trash(file: &str, config: &Config) {
+        let output = std::process::Command::new(&config.trash_command)
+            .arg(&file)
+            .output();
         match output {
             Ok(output) if output.status.success() => {
                 println!("Removed: {}", file);

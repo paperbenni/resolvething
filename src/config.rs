@@ -6,12 +6,15 @@ use serde::{Deserialize, Serialize};
 pub struct Config {
     #[serde(default = "default_working_directory")]
     pub working_directory: PathBuf,
+    #[serde(default = "default_trash_command")]
+    pub trash_command: String,
 }
 
 impl Default for Config {
     fn default() -> Self {
         Self {
             working_directory: default_working_directory(),
+            trash_command: default_trash_command(),
         }
     }
 }
@@ -52,4 +55,8 @@ impl Config {
 
 fn default_working_directory() -> PathBuf {
     dirs::home_dir().unwrap().join("wiki/vimwiki")
+}
+
+fn default_trash_command() -> String {
+    "trash".to_string()
 }
