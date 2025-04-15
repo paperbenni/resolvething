@@ -9,5 +9,6 @@ pub struct Cli {
 #[derive(Subcommand)]
 pub enum Commands {
     Dupes,
+    Conflicts,
     All,
 }
