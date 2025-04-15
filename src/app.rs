@@ -22,7 +22,7 @@ impl App {
     }
 
     pub fn check_dependencies() {
-        let commands = vec!["fdupes", "fzf", "blender"];
+        let commands = vec!["fdupes", "fzf", "trash", "bat"];
         let mut any_missing = false;
         for command in commands {
             if !Self::check_command(command) {
