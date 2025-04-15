@@ -5,8 +5,8 @@ use resolvething::{
 };
 
 fn main() {
-    let app = App::new();
     let cli = Cli::parse();
+    let app = App::new();
     if let Some(command) = cli.command {
         match command {
             Commands::Dupes => app.run_duplicate(),
@@ -14,6 +14,6 @@ fn main() {
             Commands::All => app.run_all(),
         }
     } else {
-        println!("Nothing happening");
+        app.run_all();
     }
 }

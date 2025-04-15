@@ -12,6 +12,7 @@ impl App {
     }
 
     pub fn run_duplicate(&self) {
+        eprintln!("searching for duplicates");
         let mut runner = FdupesRunner::new();
         runner
             .run_recursively(&self.config.working_directory.to_string_lossy())
@@ -24,6 +25,7 @@ impl App {
     }
 
     pub fn run_conflicts(&self) {
+        eprintln!("searching for conflicts");
         let mut finder =
             ConflictFinder::new(self.config.working_directory.to_string_lossy().to_string());
         finder.find_conflicts();

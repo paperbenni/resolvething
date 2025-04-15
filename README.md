@@ -23,8 +23,9 @@ install dependencies
 - trash
 - fd
 
-TODO: crates.io
-
+```sh
+cargo install resolvething
+```
 
 # Roadmap
 
@@ -34,6 +35,7 @@ TODO: crates.io
       - verify config
       - allow tilde in path name
     - better error handling
+- shell completion
 - maybe replace fd with walkdir
 - CI
     - tests
