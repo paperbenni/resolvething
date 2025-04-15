@@ -9,9 +9,12 @@ impl VimDiff {
             .arg(file1)
             .arg(file2)
             //TODO: figure out if this is needed
-            .stdin(Stdio::piped())
-            .stdout(Stdio::piped())
+            .stdin(Stdio::inherit())
+            .stdout(Stdio::inherit())
+            .stderr(Stdio::inherit())
             .spawn()
-            .expect("failed to start neovim");
+            .expect("failed to start neovim")
+            .wait()
+            .expect("nvim failed");
     }
 }

@@ -1,6 +1,7 @@
 use clap::Parser;
 use resolvething::{
     cli::{Cli, Commands},
+    diff::VimDiff,
     duplicates::FdupesRunner,
 };
 
@@ -29,6 +30,10 @@ fn main() {
         }
         Some(Commands::Test) => {
             println!("Running the 'test' command");
+            VimDiff::diff(
+                "/home/benjamin/test/diff/test1.txt",
+                "/home/benjamin/test/diff/test2.txt",
+            );
         }
         None => {
             println!("Hello, world!");

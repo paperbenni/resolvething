@@ -3,6 +3,7 @@ use std::process::Command;
 use std::str;
 
 use crate::fzf::Fzf;
+use crate::trash::Trash;
 
 pub struct FdupesRunner {
     pub duplicate_groups: Vec<Duplicate>,
@@ -92,22 +93,7 @@ impl Duplicate {
     pub fn keep_only(&self, keep: String) {
         for file in &self.files {
             if *file != keep {
-                let output = std::process::Command::new("trash").arg(&file).output();
-                match output {
-                    Ok(output) if output.status.success() => {
-                        println!("Removed: {}", file);
-                    }
-                    Ok(output) => {
-                        eprintln!(
-                            "Failed to remove {}: {}",
-                            file,
-                            String::from_utf8_lossy(&output.stderr)
-                        );
-                    }
-                    Err(e) => {
-                        eprintln!("Error executing trash command for {}: {}", file, e);
-                    }
-                }
+                Trash::trash(file);
             }
         }
     }

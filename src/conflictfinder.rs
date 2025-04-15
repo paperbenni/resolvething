@@ -3,7 +3,7 @@ use std::path::{Path, PathBuf};
 use regex::Regex;
 use walkdir::WalkDir;
 
-use crate::diff::VimDiff;
+use crate::{diff::VimDiff, trash::Trash};
 
 pub struct Conflict {
     pub originalfile: String,
@@ -22,51 +22,55 @@ impl Conflict {
         println!("Modified file: {}", self.modifiedfile);
     }
 
+    pub fn file_is_valid(file: &str) -> bool {
+        let path = PathBuf::from(file);
+        return path.exists()
+            && path.is_file()
+            && { std::fs::metadata(&path).ok().unwrap().len() < 1_000_000 }
+            && {
+                if let Ok(content) = std::fs::read(&path) {
+                    // Simple heuristic: check if file contains null bytes (common in binary files)
+                    !content.contains(&0)
+                } else {
+                    false
+                }
+            };
+    }
+
     pub fn is_valid(&self) -> bool {
-        let original_exists = PathBuf::from(&self.originalfile).exists();
-        let modified_exists = PathBuf::from(&self.modifiedfile).exists();
-        self.originalfile != self.modifiedfile && original_exists && modified_exists
+        self.originalfile != self.modifiedfile
+            && Conflict::file_is_valid(&self.originalfile)
+            && Conflict::file_is_valid(&self.modifiedfile)
     }
 
     pub fn handle_conflict(&self) {
-        // Implement conflict handling logic here
-        // if file "$conflict_file" | grep -q "text"; then
-        //   # Check if the file size is within the limit
-        //   if [ "$(stat -c%s "$conflict_file")" -le "$MAX_SIZE" ]; then
-        //     # Derive the original file name (assuming a naming convention)
-        //     original_file="$(
-        //         sed 's/\.sync-conflict-[A-Z0-9-]*\.md$/.md/' <<< "$conflict_file"
-        //     )"
-        //     echo "conflict_file: $conflict_file"
-        //     echo "original_file: $original_file"
-
-        //     if [ "$conflict_file"  = "$original_file" ]; then
-        //       echo "conflict file and original file are the same file, wtf"
-        //       echo "skipping"
-        //       continue
-        //     fi
-
-        //     # Check if the original file exists
-        //     if [ -f "$original_file" ]; then
-        //       # Open both files in Neovim diff mode
-        //       nvim -d "$conflict_file" "$original_file"
-
-        //       # After Neovim exits, compare the files
-        //       if cmp -s "$conflict_file" "$original_file"; then
-        //         # If files are identical, remove the conflict file
-        //         trash "$conflict_file"
-        //         echo "Removed identical conflict file: $conflict_file"
-        //       else
-        //         echo "Files are different. Conflict file not removed: $conflict_file"
-        //       fi
-        //     else
-        //       echo "Original file not found for: $conflict_file"
-        //     fi
-        //   fi
         if !self.is_valid() {
             return;
         }
+
+        if !PathBuf::from(&self.modifiedfile).exists() && PathBuf::from(&self.originalfile).exists()
+        {
+            println!("conflict already resolved:");
+            self.print();
+            println!("");
+            return;
+        }
         VimDiff::diff(&self.modifiedfile, &self.originalfile);
+
+        let resolved = if let (Ok(original_content), Ok(modified_content)) = (
+            std::fs::read_to_string(&self.originalfile),
+            std::fs::read_to_string(&self.modifiedfile),
+        ) {
+            // Compare the contents
+            original_content == modified_content
+        } else {
+            // If we can't read either file, they're not resolved
+            false
+        };
+        if resolved {
+            println!("I would have deleted {} here", &self.modifiedfile);
+            // Trash::trash(&self.modifiedfile);
+        }
     }
 }
 
