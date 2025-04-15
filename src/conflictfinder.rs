@@ -92,16 +92,15 @@ impl ConflictFinder {
         // walkdir across directory, find
         // files which match the regex .*\.sync-conflict-[A-Z0-9-]*\.md$
         let regex = Regex::new(r".*\.sync-conflict-[A-Z0-9-]*\.md$").unwrap();
+        let replaceexp = Regex::new(r"\.sync-conflict-[A-Z0-9-]*\.md$").unwrap();
         for entry in WalkDir::new(&self.directory)
             .into_iter()
             .filter_map(|e| e.ok())
         {
             if entry.file_type().is_file() && regex.is_match(entry.path().to_str().unwrap()) {
-                let originalfile = entry.path().to_str().unwrap().replacen(
-                    &regex.to_string()[2..regex.to_string().len() - 7],
-                    "",
-                    1,
-                );
+                let originalfile = replaceexp
+                    .replace_all(entry.path().to_str().unwrap(), ".md")
+                    .to_string();
                 let modifiedfile = entry.path().to_str().unwrap().to_string();
 
                 self.conflicts.push(Conflict {
