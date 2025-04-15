@@ -10,5 +10,4 @@ pub struct Cli {
 pub enum Commands {
     Dupes,
     All,
-    Test,
 }

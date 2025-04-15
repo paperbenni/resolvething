@@ -1,9 +1,9 @@
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
 use regex::Regex;
 use walkdir::WalkDir;
 
-use crate::{diff::VimDiff, trash::Trash};
+use crate::diff::VimDiff;
 
 pub struct Conflict {
     pub originalfile: String,
