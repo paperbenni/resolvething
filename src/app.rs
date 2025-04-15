@@ -55,9 +55,10 @@ impl App {
             ConflictFinder::new(self.config.working_directory.to_string_lossy().to_string());
         finder.find_conflicts();
         finder.print_conflicts();
-        finder.conflicts.into_iter().for_each(|conflict| {
+        println!("wouldve handled this");
+        for conflict in finder.conflicts {
             conflict.handle_conflict();
-        });
+        }
     }
 
     pub fn run_all(&self) {
