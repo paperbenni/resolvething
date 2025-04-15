@@ -1,121 +1,9 @@
-use clap::{Parser, Subcommand};
-use std::str;
-use std::{
-    io::{BufRead, BufReader, Write},
-    process::{Command, Stdio},
+use clap::Parser;
+use resolvething::{
+    cli::{Cli, Commands},
+    fdupes_runner::FdupesRunner,
+    fzf::Fzf,
 };
-
-#[derive(Parser)]
-struct Cli {
-    #[command(subcommand)]
-    command: Option<Commands>,
-}
-
-#[derive(Subcommand)]
-enum Commands {
-    Dupes,
-    All,
-}
-
-pub struct FdupesRunner {
-    pub duplicate_groups: Vec<Vec<String>>,
-}
-
-pub struct Fzf;
-
-impl Fzf {
-    /// Launches an fzf process to allow the user to select an item from the provided vector.
-    ///
-    /// # Arguments
-    ///
-    /// * `items` - A vector of strings representing the items to choose from.
-    ///
-    /// # Returns
-    ///
-    /// * `Option<String>` - The selected item as a `String`, or `None` if no selection was made.
-    pub fn select(items: Vec<String>) -> Option<String> {
-        let mut child = Command::new("fzf")
-            .arg("--preview")
-            .arg("bat --style=plain --paging=never --color=always {}")
-            .arg("--preview-window")
-            .arg(if termsize::get().map_or(false, |size| size.cols < 80) {
-                "down:50%"
-            } else {
-                "right:50%"
-            })
-            .stdin(Stdio::piped())
-            .stdout(Stdio::piped())
-            .spawn()
-            .expect("Failed to start fzf process");
-
-        {
-            let stdin = child.stdin.as_mut().expect("Failed to open stdin");
-            for item in items {
-                writeln!(stdin, "{}", item).expect("Failed to write to stdin");
-            }
-        }
-
-        let output = child.wait_with_output().expect("Failed to read fzf output");
-
-        if output.status.success() {
-            let selected = BufReader::new(output.stdout.as_slice())
-                .lines()
-                .next()
-                .unwrap_or_else(|| Ok(String::new()))
-                .unwrap();
-            if !selected.is_empty() {
-                return Some(selected);
-            }
-        }
-
-        None
-    }
-}
-
-impl FdupesRunner {
-    pub fn new() -> Self {
-        FdupesRunner {
-            duplicate_groups: Vec::new(),
-        }
-    }
-
-    pub fn run_recursively(&mut self, directory: &str) -> Result<(), String> {
-        let output = Command::new("fdupes")
-            .arg("-r")
-            .arg(directory)
-            .output()
-            .map_err(|e| format!("Failed to execute fdupes: {}", e))?;
-
-        if !output.status.success() {
-            return Err(format!("fdupes failed with status: {}", output.status));
-        }
-
-        let stdout = str::from_utf8(&output.stdout)
-            .map_err(|e| format!("Failed to parse fdupes output: {}", e))?;
-
-        self.parse_output(stdout);
-        Ok(())
-    }
-
-    fn parse_output(&mut self, output: &str) {
-        let mut current_group = Vec::new();
-
-        for line in output.lines() {
-            if line.is_empty() {
-                if !current_group.is_empty() {
-                    self.duplicate_groups.push(current_group);
-                    current_group = Vec::new();
-                }
-            } else {
-                current_group.push(line.to_string());
-            }
-        }
-
-        if !current_group.is_empty() {
-            self.duplicate_groups.push(current_group);
-        }
-    }
-}
 
 fn main() {
     let cli = Cli::parse();
@@ -134,18 +22,24 @@ fn main() {
                             println!("Selected: {}", selected);
                             for file in group {
                                 if file != selected {
-                                    let output = std::process::Command::new("trash")
-                                        .arg(&file)
-                                        .output();
+                                    let output =
+                                        std::process::Command::new("trash").arg(&file).output();
                                     match output {
                                         Ok(output) if output.status.success() => {
                                             println!("Removed: {}", file);
                                         }
                                         Ok(output) => {
-                                            eprintln!("Failed to remove {}: {}", file, String::from_utf8_lossy(&output.stderr));
+                                            eprintln!(
+                                                "Failed to remove {}: {}",
+                                                file,
+                                                String::from_utf8_lossy(&output.stderr)
+                                            );
                                         }
                                         Err(e) => {
-                                            eprintln!("Error executing trash command for {}: {}", file, e);
+                                            eprintln!(
+                                                "Error executing trash command for {}: {}",
+                                                file, e
+                                            );
                                         }
                                     }
                                 }
