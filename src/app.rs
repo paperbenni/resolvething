@@ -1,4 +1,4 @@
-use crate::{config::Config, conflictfinder::ConflictFinder, duplicates::FclonesRunner};
+use crate::{config::Config, conflict::ConflictFinder, duplicates::FclonesRunner};
 
 pub struct App {
     config: Config,
@@ -55,7 +55,6 @@ impl App {
             ConflictFinder::new(self.config.working_directory.to_string_lossy().to_string());
         finder.find_conflicts();
         finder.print_conflicts();
-        println!("wouldve handled this");
         for conflict in finder.conflicts {
             conflict.handle_conflict(&self.config);
         }
