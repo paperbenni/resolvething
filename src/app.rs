@@ -53,7 +53,8 @@ impl App {
         eprintln!("searching for conflicts");
         let mut finder =
             ConflictFinder::new(self.config.working_directory.to_string_lossy().to_string());
-        finder.find_conflicts();
+        finder.find_conflicts("md");
+        finder.find_conflicts("json");
         finder.print_conflicts();
         for conflict in finder.conflicts {
             conflict.handle_conflict(&self.config);

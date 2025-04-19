@@ -86,11 +86,11 @@ impl ConflictFinder {
         }
     }
 
-    pub fn find_conflicts(&mut self) {
+    pub fn find_conflicts(&mut self, file_type: &str) {
         // walkdir across directory, find
-        // files which match the regex .*\.sync-conflict-[A-Z0-9-]*\.md$
-        let regex = Regex::new(r".*\.sync-conflict-[A-Z0-9-]*\.md$").unwrap();
-        let replaceexp = Regex::new(r"\.sync-conflict-[A-Z0-9-]*\.md$").unwrap();
+        // files which match the regex .*\.sync-conflict-[A-Z0-9-]*\.{file_type}$
+        let regex = Regex::new(&format!(r".*\.sync-conflict-[A-Z0-9-]*\.{}$", file_type)).unwrap();
+        let replaceexp = Regex::new(&format!(r"\.sync-conflict-[A-Z0-9-]*\.{}$", file_type)).unwrap();
         for entry in WalkDir::new(&self.directory)
             .into_iter()
             .filter_map(|e| e.ok())
@@ -106,7 +106,7 @@ impl ConflictFinder {
             }
             if entry.file_type().is_file() && regex.is_match(entry.path().to_str().unwrap()) {
                 let originalfile = replaceexp
-                    .replace_all(entry.path().to_str().unwrap(), ".md")
+                    .replace_all(entry.path().to_str().unwrap(), &format!(".{}", file_type))
                     .to_string();
                 let modifiedfile = entry.path().to_str().unwrap().to_string();
 
@@ -117,6 +117,7 @@ impl ConflictFinder {
             }
         }
     }
+
 
     pub fn print_conflicts(&self) {
         for conflict in &self.conflicts {
