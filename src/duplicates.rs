@@ -10,6 +10,34 @@ pub struct FclonesRunner {
     pub duplicate_groups: Vec<Duplicate>,
 }
 
+pub struct SyncThingFile {
+    pub path: String,
+    pub filetype: SyncThingFileType,
+}
+
+impl SyncThingFile {
+    pub fn get_file_type(file: &str) -> SyncThingFileType {
+        if file.contains(".sync-conflict-") {
+            SyncThingFileType::StConflict
+        } else if file.ends_with(".orig") {
+            SyncThingFileType::OrigFile
+        } else {
+            SyncThingFileType::Regular
+        }
+    }
+
+    pub fn new(path: String) -> Self {
+        let filetype = Self::get_file_type(&path);
+        SyncThingFile { path, filetype }
+    }
+}
+
+pub enum SyncThingFileType {
+    Regular,
+    StConflict,
+    OrigFile,
+}
+
 impl FclonesRunner {
     pub fn new() -> Self {
         FclonesRunner {
