@@ -1,5 +1,6 @@
+use regex::Regex;
+use std::path::Path;
 use std::process::Command;
-
 use std::str;
 
 use crate::config::Config;
@@ -10,17 +11,21 @@ pub struct FclonesRunner {
     pub duplicate_groups: Vec<Duplicate>,
 }
 
+#[derive(Clone)]
 pub struct SyncThingFile {
     pub path: String,
-    pub filetype: SyncThingFileType,
+    pub file_type: SyncThingFileType,
 }
 
 impl SyncThingFile {
     pub fn get_file_type(file: &str) -> SyncThingFileType {
+        // TODO: use regex .*\.sync-conflict-[A-Z0-9-]*\..*$
         if file.contains(".sync-conflict-") {
             SyncThingFileType::StConflict
         } else if file.ends_with(".orig") {
             SyncThingFileType::OrigFile
+        } else if file.ends_with(".tmp") {
+            SyncThingFileType::TmpFile
         } else {
             SyncThingFileType::Regular
         }
@@ -28,14 +33,19 @@ impl SyncThingFile {
 
     pub fn new(path: String) -> Self {
         let filetype = Self::get_file_type(&path);
-        SyncThingFile { path, filetype }
+        SyncThingFile {
+            path,
+            file_type: filetype,
+        }
     }
 }
 
+#[derive(Clone)]
 pub enum SyncThingFileType {
     Regular,
     StConflict,
     OrigFile,
+    TmpFile,
 }
 
 impl FclonesRunner {
@@ -90,16 +100,28 @@ impl FclonesRunner {
 }
 
 pub struct Duplicate {
-    pub files: Vec<String>,
+    pub files: Vec<SyncThingFile>,
 }
 
 impl Duplicate {
-    pub fn new(files: Vec<String>) -> Self {
+    pub fn new(file_paths: Vec<String>) -> Self {
+        let files = file_paths
+            .into_iter()
+            .map(|path| SyncThingFile::new(path))
+            .collect();
         Duplicate { files }
     }
 
     pub fn choose(&self) -> Option<String> {
-        let options = self.files.clone();
+        // Check if we can automatically select a file
+        if let Some(auto_selected) = self.try_auto_select() {
+            println!("Auto-selected file: {}", auto_selected);
+            return Some(auto_selected);
+        }
+
+        // Otherwise, proceed with normal selection
+        let options: Vec<String> = self.files.iter().map(|file| file.path.clone()).collect();
+
         let choice = Fzf::select(options);
         if let Some(selected) = choice {
             println!("Selected: {}", selected);
@@ -108,6 +130,49 @@ impl Duplicate {
             println!("No selection made");
             None
         }
+    }
+
+    /// Attempts to automatically select a file based on file types
+    ///
+    /// Returns the path of the selected file if auto-selection is possible,
+    /// or None if user selection is needed
+    fn try_auto_select(&self) -> Option<String> {
+        // Count files by type
+
+        let mut regular_files = vec![];
+        let mut conflict_files = vec![];
+        let mut tmp_files = vec![];
+        let mut orig_files = vec![];
+
+        for file in &self.files {
+            match file.file_type {
+                SyncThingFileType::Regular => regular_files.push(file),
+                SyncThingFileType::StConflict => conflict_files.push(file),
+                SyncThingFileType::OrigFile => orig_files.push(file),
+                SyncThingFileType::TmpFile => tmp_files.push(file),
+            }
+        }
+
+        if self.files.len() == 0 {
+            return None;
+        } else if regular_files.len() == 1 && regular_files.len() < self.files.len() {
+            return Some(regular_files[0].path.clone());
+        }
+
+        // Case 2: If there are only temporary files and one conflict file
+        if conflict_files.len() == 1 && tmp_files.len() + conflict_files.len() == self.files.len() {
+            return Some(conflict_files[0].path.clone());
+        }
+
+        if self.files.len() == tmp_files.len() {
+            return Some(tmp_files[0].path.clone());
+        }
+
+        if self.files.len() == conflict_files.len() {
+            return Some(conflict_files[0].path.clone());
+        }
+        // No auto-selection possible
+        None
     }
 
     /// Keeps the specified file and moves other duplicates to the trash.
@@ -127,8 +192,8 @@ impl Duplicate {
     /// ```
     pub fn keep_only(&self, keep: String, config: &Config) {
         for file in &self.files {
-            if *file != keep {
-                Trash::trash(file, config);
+            if file.path != keep {
+                Trash::trash(&file.path, config);
             }
         }
     }
