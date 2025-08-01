@@ -1,19 +1,23 @@
 use clap::Parser;
 use resolvething::{
+    Result,
     app::App,
     cli::{Cli, Commands},
 };
 
-fn main() {
+fn main() -> Result<()> {
     let cli = Cli::parse();
-    let app = App::new();
+    let app = App::new()?;
+
     if let Some(command) = cli.command {
         match command {
-            Commands::Dupes => app.run_duplicate(),
-            Commands::Conflicts => app.run_conflicts(),
-            Commands::All => app.run_all(),
+            Commands::Dupes => app.run_duplicate()?,
+            Commands::Conflicts => app.run_conflicts()?,
+            Commands::All => app.run_all()?,
         }
     } else {
-        app.run_all();
+        app.run_all()?;
     }
+
+    Ok(())
 }

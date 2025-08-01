@@ -1,9 +1,11 @@
 use std::path::PathBuf;
 
-use regex::Regex;
 use walkdir::WalkDir;
 
-use crate::{config::Config, diff::VimDiff, trash::Trash};
+use crate::{
+    config::Config, diff::VimDiff, sync_conflict_regex_for_type,
+    sync_conflict_replace_regex_for_type, trash::Trash,
+};
 
 pub struct Conflict {
     pub originalfile: String,
@@ -88,9 +90,8 @@ impl ConflictFinder {
 
     pub fn find_conflicts(&mut self, file_type: &str) {
         // walkdir across directory, find
-        // files which match the regex .*\.sync-conflict-[A-Z0-9-]*\.{file_type}$
-        let regex = Regex::new(&format!(r".*\.sync-conflict-[A-Z0-9-]*\.{}$", file_type)).unwrap();
-        let replaceexp = Regex::new(&format!(r"\.sync-conflict-[A-Z0-9-]*\.{}$", file_type)).unwrap();
+        let regex = sync_conflict_regex_for_type(file_type);
+        let replaceexp = sync_conflict_replace_regex_for_type(file_type);
         for entry in WalkDir::new(&self.directory)
             .into_iter()
             .filter_map(|e| e.ok())
@@ -117,7 +118,6 @@ impl ConflictFinder {
             }
         }
     }
-
 
     pub fn print_conflicts(&self) {
         for conflict in &self.conflicts {
