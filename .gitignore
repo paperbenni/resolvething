@@ -20,3 +20,6 @@ target/
 
 /target
 tags
+
+# Crush local state
+.crush/
