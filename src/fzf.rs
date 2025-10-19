@@ -1,3 +1,4 @@
+use anyhow::{Context, Result};
 use std::{
     io::{BufRead, BufReader, Write},
     process::{Command, Stdio},
@@ -16,11 +17,15 @@ impl Fzf {
     ///
     /// * `Option<String>` - The selected item as a `String`, or `None` if no selection was made.
     pub fn select(items: Vec<String>) -> Option<String> {
+        Self::select_internal(items).ok().flatten()
+    }
+
+    fn select_internal(items: Vec<String>) -> Result<Option<String>> {
         let mut child = Command::new("fzf")
             .arg("--preview")
             .arg("bat --style=plain --paging=never --color=always {}")
             .arg("--preview-window")
-            .arg(if termsize::get().map_or(false, |size| size.cols < 80) {
+            .arg(if termsize::get().is_some_and(|size| size.cols < 80) {
                 "down:50%"
             } else {
                 "right:50%"
@@ -28,28 +33,31 @@ impl Fzf {
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
             .spawn()
-            .expect("Failed to start fzf process");
+            .context("Failed to start fzf process")?;
 
         {
-            let stdin = child.stdin.as_mut().expect("Failed to open stdin");
+            let stdin = child.stdin.as_mut().context("Failed to open fzf stdin")?;
             for item in items {
-                writeln!(stdin, "{}", item).expect("Failed to write to stdin");
+                writeln!(stdin, "{}", item).context("Failed to write to fzf stdin")?;
             }
         }
 
-        let output = child.wait_with_output().expect("Failed to read fzf output");
+        let output = child
+            .wait_with_output()
+            .context("Failed to read fzf output")?;
 
         if output.status.success() {
             let selected = BufReader::new(output.stdout.as_slice())
                 .lines()
                 .next()
-                .unwrap_or_else(|| Ok(String::new()))
-                .unwrap();
+                .transpose()
+                .context("Failed to read fzf selection")?
+                .unwrap_or_default();
             if !selected.is_empty() {
-                return Some(selected);
+                return Ok(Some(selected));
             }
         }
 
-        None
+        Ok(None)
     }
 }

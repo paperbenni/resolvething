@@ -1,6 +1,6 @@
+use anyhow::Result;
 use clap::Parser;
 use resolvething::{
-    Result,
     app::App,
     cli::{Cli, Commands},
 };

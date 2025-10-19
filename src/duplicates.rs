@@ -1,16 +1,18 @@
 use std::process::Command;
 use std::str;
 
-use crate::ResolvethingError;
 use crate::config::Config;
 use crate::fzf::Fzf;
 use crate::sync_conflict_regex;
 use crate::trash::Trash;
+use anyhow::{Context, Result};
 
+/// Runner for the fclones tool to find duplicate files
 pub struct FclonesRunner {
     pub duplicate_groups: Vec<Duplicate>,
 }
 
+/// Represents a file in the Syncthing synchronization context
 #[derive(Clone)]
 pub struct SyncThingFile {
     pub path: String,
@@ -40,12 +42,23 @@ impl SyncThingFile {
     }
 }
 
+/// Types of files in the Syncthing synchronization workflow
 #[derive(Clone)]
 pub enum SyncThingFileType {
+    /// Regular file without special suffixes
     Regular,
+    /// Syncthing conflict file (*.sync-conflict-*)
     StConflict,
+    /// Original file backup (*.orig)
     OrigFile,
+    /// Temporary file (*.tmp)
     TmpFile,
+}
+
+impl Default for FclonesRunner {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl FclonesRunner {
@@ -55,7 +68,7 @@ impl FclonesRunner {
         }
     }
 
-    pub fn run_recursively(&mut self, directory: &str) -> Result<(), ResolvethingError> {
+    pub fn run_recursively(&mut self, directory: &str) -> Result<()> {
         let output = Command::new("fclones")
             .arg("group")
             .arg("--hidden")
@@ -66,20 +79,14 @@ impl FclonesRunner {
             .arg("--exclude")
             .arg("**/.stversions/**")
             .output()
-            .map_err(|e| {
-                ResolvethingError::Duplicate(format!("Failed to execute fclones: {}", e))
-            })?;
+            .context("Failed to execute fclones")?;
 
         if !output.status.success() {
-            return Err(ResolvethingError::Duplicate(format!(
-                "fclones failed with status: {}",
-                output.status
-            )));
+            anyhow::bail!("fclones failed with status: {}", output.status);
         }
 
-        let stdout = str::from_utf8(&output.stdout).map_err(|e| {
-            ResolvethingError::Duplicate(format!("Failed to parse fclones output: {}", e))
-        })?;
+        let stdout =
+            str::from_utf8(&output.stdout).context("Failed to parse fclones output as UTF-8")?;
 
         self.parse_output(stdout);
         Ok(())
@@ -105,16 +112,14 @@ impl FclonesRunner {
     }
 }
 
+/// Represents a group of duplicate files
 pub struct Duplicate {
     pub files: Vec<SyncThingFile>,
 }
 
 impl Duplicate {
     pub fn new(file_paths: Vec<String>) -> Self {
-        let files = file_paths
-            .into_iter()
-            .map(|path| SyncThingFile::new(path))
-            .collect();
+        let files = file_paths.into_iter().map(SyncThingFile::new).collect();
         Duplicate { files }
     }
 
@@ -159,7 +164,7 @@ impl Duplicate {
             }
         }
 
-        if self.files.len() == 0 {
+        if self.files.is_empty() {
             return None;
         } else if regular_files.len() == 1 && regular_files.len() < self.files.len() {
             return Some(regular_files[0].path.clone());
@@ -198,14 +203,15 @@ impl Duplicate {
     ///     "/path/to/file2.txt".to_string(),
     /// ]);
     /// let config = Config::default();
-    /// duplicate.keep_only("/path/to/file1.txt".to_string(), &config);
+    /// let _ = duplicate.keep_only("/path/to/file1.txt".to_string(), &config);
     /// ```
-    pub fn keep_only(&self, keep: String, config: &Config) {
+    pub fn keep_only(&self, keep: String, config: &Config) -> Result<()> {
         for file in &self.files {
             if file.path != keep {
-                Trash::trash(&file.path, config);
+                Trash::trash(&file.path, config)?;
             }
         }
+        Ok(())
     }
 }
 

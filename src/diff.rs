@@ -1,9 +1,10 @@
+use anyhow::{Context, Result};
 use std::process::{Command, Stdio};
 
 pub struct VimDiff;
 
 impl VimDiff {
-    pub fn diff(file1: &str, file2: &str) {
+    pub fn diff(file1: &str, file2: &str) -> Result<()> {
         Command::new("nvim")
             .arg("-d")
             .arg(file1)
@@ -12,8 +13,9 @@ impl VimDiff {
             .stdout(Stdio::inherit())
             .stderr(Stdio::inherit())
             .spawn()
-            .expect("failed to start neovim")
+            .context("Failed to start neovim")?
             .wait()
-            .expect("nvim failed");
+            .context("neovim exited with error")?;
+        Ok(())
     }
 }
