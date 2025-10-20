@@ -6,6 +6,7 @@ license = "GPL-2.0"
 keywords = ["syncthing"]
 categories = ["command-line-utilities"]
 description = "A CLI tool to resolve syncthing conflicts and duplicate files"
+repository = "https://github.com/paperbenni/resolvething"
 
 [dependencies]
 anyhow = "1.0"
